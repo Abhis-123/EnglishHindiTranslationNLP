@@ -84,7 +84,7 @@ class Translate:
         print("English Vocab Size: ", self.english_vocab_size)
         print("Hindi Vocab Size: ", self.hindi_vocab_size)
 
-    def train_en_hi(self, num_epochs=10, optimizer='rmsprop', metrics=['accuracy'], **kwargs):
+    def train_en_hi(self, num_epochs=10, optimizer='rmsprop', metrics=['accuracy'], batch_size= batch_size, **kwargs):
 
         if self.en_hi_model == None:
             self.en_hi_model = LSTMModel(encoder_vocab_size=self.english_vocab_size,
@@ -114,10 +114,10 @@ class Translate:
             mode='max'
         )
         self.en_hi_model.fit([encoder_inputs, decoder_inputs],
-                             decoder_outputs,epochs=num_epochs ,validation_split=self.validation_split,
-                             callbacks=[callback1])
+                             decoder_outputs,epochs=num_epochs , batch_size= batch_size,validation_split=self.validation_split,
+                             callbacks=[callback1], **kwargs)
 
-    def train_hi_en(self, num_epochs=10, optimizer='rmsprop', metrics=['accuracy'], **kwargs):
+    def train_hi_en(self, num_epochs=10, optimizer='rmsprop', metrics=['accuracy'], batch_size=16, **kwargs):
         if self.hi_en_model == None:
             self.hi_en_model = LSTMModel(encoder_vocab_size=self.hindi_vocab_size,
                                          decoder_vocab_size=self.english_vocab_size)
@@ -146,22 +146,22 @@ class Translate:
             mode='max'
         )
         self.hi_en_model.fit([encoder_inputs, decoder_inputs],
-                             decoder_outputs, epochs= num_epochs, validation_split=self.validation_split,
-                             callbacks=[callback1])
+                             decoder_outputs, epochs= num_epochs, batch_size= batch_size, validation_split=self.validation_split,
+                             callbacks=[callback1], **kwargs)
                              
-    def train(self, model_to_train=None, num_epochs=2, optimizer='rmsprop', metrics=['accuracy'], **kwargs):
+    def train(self, model_to_train=None, num_epochs=2, optimizer='rmsprop', metrics=['accuracy'],batch_size=16, **kwargs):
         self.tokenize_data()
         if model_to_train == 'en_hi':
             self.train_en_hi(num_epochs=num_epochs,
-                             optimizer=optimizer, metrics=metrics, **kwargs)
+                             optimizer=optimizer, metrics=metrics,batch_size= batch_size, **kwargs)
         elif model_to_train == 'hi_en':
             self.train_hi_en(num_epochs=num_epochs,
-                             optimizer=optimizer, metrics=metrics, **kwargs)
+                             optimizer=optimizer, metrics=metrics,batch_size= batch_size, **kwargs)
         else:
             self.train_hi_en(num_epochs=num_epochs,
-                             optimizer=optimizer, metrics=metrics, **kwargs)
+                             optimizer=optimizer, metrics=metrics,batch_size= batch_size, **kwargs)
             self.train_en_hi(num_epochs=num_epochs,
-                             optimizer=optimizer, metrics=metrics, **kwargs)
+                             optimizer=optimizer, metrics=metrics,batch_size= batch_size, **kwargs)
 
     def save_model(self, path=None):
         if path != None and os.path.exists(path):
