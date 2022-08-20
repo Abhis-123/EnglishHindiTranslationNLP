@@ -84,7 +84,7 @@ class Translate:
         print("English Vocab Size: ", self.english_vocab_size)
         print("Hindi Vocab Size: ", self.hindi_vocab_size)
 
-    def train_en_hi(self, num_epochs=10, optimizer='rmsprop', metrics=['accuracy'], batch_size= batch_size, **kwargs):
+    def train_en_hi(self, num_epochs=10, optimizer='rmsprop', metrics=['accuracy'], batch_size= None , **kwargs):
 
         if self.en_hi_model == None:
             self.en_hi_model = LSTMModel(encoder_vocab_size=self.english_vocab_size,
@@ -117,7 +117,7 @@ class Translate:
                              decoder_outputs,epochs=num_epochs , batch_size= batch_size,validation_split=self.validation_split,
                              callbacks=[callback1], **kwargs)
 
-    def train_hi_en(self, num_epochs=10, optimizer='rmsprop', metrics=['accuracy'], batch_size=16, **kwargs):
+    def train_hi_en(self, num_epochs=10, optimizer='rmsprop', metrics=['accuracy'], batch_size=None, **kwargs):
         if self.hi_en_model == None:
             self.hi_en_model = LSTMModel(encoder_vocab_size=self.hindi_vocab_size,
                                          decoder_vocab_size=self.english_vocab_size)
@@ -181,55 +181,20 @@ class Translate:
         if self.english_tokenizer ==None or self.hindi_tokenizer==None or self.en_hi_model==None:
             print("the translate object is not initialized properly")
             return sentence
-        sequence = self.english_tokenizer.texts_to_sequences([sentence])
-        embedding = self.en_hi_model.encoder(np.array(sequence))
-        _, next_h, next_c= self.en_hi_model.encoder_lstm(embedding)
-        curr_token = [[0]]
-        curr_token[0][0] = self.hindi_tokenizer.word_index['<START>']
-        predict_sentence = ''
-        for i in range(max_sentence_length):
-                # print(curr_token, next_h.shape, next_c.shape)
-                temp = self.en_hi_model.decoder(np.array(curr_token))
-                output , next_h, next_c= self.en_hi_model.decoder_lstm(temp,initial_state= [next_h, next_c])
-                next_token = np.argmax(output[0, 0, :])
-                next_word =self.hindi_tokenizer.index_word[next_token]
-
-                if next_word == '<END>':
-                    break
-                predict_sentence =predict_sentence+" " + next_word
-                curr_token[0][0] = next_token
-                #curr_token[0].append(next_token)
-        return predict_sentence
+        
+        return self.en_hi_model.predict_sequence(sentence, self.english_tokenizer, self.hindi_tokenizer)
 
 
     def translate_sentence_to_english(self,sentence):
         if self.english_tokenizer ==None or self.hindi_tokenizer==None or self.hi_en_model==None:
             print("the translate object is not initialized properly")
             return sentence
-        sequence = self.hindi_tokenizer.texts_to_sequences([sentence])
-        embedding = self.hi_en_model.encoder(np.array(sequence))
-        _, next_h, next_c= self.hi_en_model.encoder_lstm(embedding)
-        curr_token = [[0]]
-        curr_token[0][0] = self.english_tokenizer.word_index['<START>']
-        predict_sentence = ''
-        for i in range(max_sentence_length):
-                # print(curr_token, next_h.shape, next_c.shape)
-                temp = self.hi_en_model.decoder(np.array(curr_token))
-                output , next_h, next_c= self.hi_en_model.decoder_lstm(temp,initial_state= [next_h, next_c])
-                next_token = np.argmax(output[0, 0, :])
-                next_word =self.english_tokenizer.index_word[next_token]
-
-                if next_word == '<END>':
-                    break
-                predict_sentence =predict_sentence+" " + next_word
-                curr_token[0][0] = next_token
-                #curr_token[0].append(next_token)
-        return predict_sentence
+        return self.hi_en_model.predict_sequence(sentence, self.hindi_tokenizer, self.english_tokenizer)
 
 if __name__ == "__main__":
-    train_df = prepare_data(type='train', max_entries=1000)
+    train_df = prepare_data(type='train', max_entries=50000)
     trans = Translate(path_to_weights=Weights_DIR, data=train_df)
-    trans.train(num_epochs=1)
+    trans.train(num_epochs=10)
     trans.save_model()
     trans1 = Translate(path_to_weights=Weights_DIR, data=train_df)
     trans1.load_weights()
@@ -239,4 +204,3 @@ if __name__ == "__main__":
     print(hi)
     en = trans1.translate_sentence_to_english(hi)
     print(en)
-
