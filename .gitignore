@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 
 # weights folder 
-weights/
 *.json
 data/
 # C extensions
